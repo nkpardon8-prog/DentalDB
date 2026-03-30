@@ -1,0 +1,242 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("VIEWER") // ADMIN, MANAGER, VIEWER
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model OfficeSetting {
+  id            String   @id @default("default")
+  officeName    String
+  timezone      String   @default("America/New_York")
+  dataSource    String   @default("opendental") // "opendental" | "eaglesoft" | "dentrix"
+  dataMode      String   @default("unconfigured") // "live" | "demo" | "unconfigured"
+  mysqlHost     String   @default("localhost")
+  mysqlPort     Int      @default(3306)
+  mysqlUser     String   @default("")
+  mysqlPassword String   @default("") // encrypted
+  mysqlDatabase String   @default("opendental")
+  kollaToken    String   @default("") // encrypted Kolla bearer token (Eaglesoft/Dentrix)
+  kollaSecret   String   @default("") // encrypted "connectorId:consumerId" (Eaglesoft/Dentrix)
+  lastSyncAt    DateTime?
+  syncEnabled   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Employee {
+  id            Int      @id
+  firstName     String
+  lastName      String
+  isHidden      Boolean  @default(false)
+  syncedAt      DateTime @default(now())
+
+  clockEvents  ClockEvent[]
+  securityLogs SecurityLog[]
+  userOds      UserOd[]
+  alerts       Alert[]
+  goals        Goal[]
+}
+
+model UserOd {
+  userNum     Int      @id
+  userName    String
+  employeeNum Int?
+  providerNum Int?
+  isHidden    Boolean  @default(false)
+  syncedAt    DateTime @default(now())
+
+  employee Employee? @relation(fields: [employeeNum], references: [id])
+
+  @@index([employeeNum])
+}
+
+model Provider {
+  id        Int      @id
+  abbr      String
+  firstName String
+  lastName  String
+  isHidden  Boolean  @default(false)
+  syncedAt  DateTime @default(now())
+}
+
+model ClockEvent {
+  id            Int       @id
+  employeeId    Int
+  timeIn        DateTime
+  timeOut       DateTime?
+  clockStatus   String // Home, Lunch, Break
+  isWorkingHome Boolean   @default(false)
+  overtimeHours Float     @default(0)
+  note          String?
+  syncedAt      DateTime  @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+
+  @@index([employeeId, timeIn])
+}
+
+model SecurityLog {
+  id          Int      @id
+  permType    String
+  userNum     Int
+  userName    String?
+  employeeId  Int?
+  logDateTime DateTime
+  logText     String
+  patNum      Int?
+  compName    String?
+  logSource   String?
+  source      String   @default("direct") // "direct" or "inferred"
+  syncedAt    DateTime @default(now())
+
+  employee Employee? @relation(fields: [employeeId], references: [id])
+
+  @@index([logDateTime])
+  @@index([employeeId, logDateTime])
+  @@index([permType])
+}
+
+model Appointment {
+  id                Int       @id
+  patNum            Int
+  aptStatus         String
+  aptDateTime       DateTime
+  provNum           Int?
+  confirmedStatus   Int?
+  note              String?
+  dateTimeArrived   DateTime?
+  dateTimeSeated    DateTime?
+  dateTimeDismissed DateTime?
+  syncedAt          DateTime  @default(now())
+
+  @@index([aptDateTime])
+  @@index([aptStatus])
+}
+
+model Claim {
+  id          Int       @id
+  patNum      Int
+  claimStatus String
+  dateSent    DateTime?
+  dateReceived DateTime?
+  claimFee    Float?
+  insPayAmt   Float?
+  provNum     Int?
+  syncedAt    DateTime  @default(now())
+
+  @@index([claimStatus])
+  @@index([dateSent])
+}
+
+model ProcedureLog {
+  id          Int      @id
+  patNum      Int
+  provNum     Int
+  procDate    DateTime
+  procStatus  String
+  procCode    String
+  procFee     Float
+  description String?
+  syncedAt    DateTime @default(now())
+
+  @@index([procDate])
+  @@index([provNum, procDate])
+}
+
+model SyncState {
+  endpoint      String   @id
+  lastSyncStamp DateTime
+  lastRunAt     DateTime
+  itemsSynced   Int      @default(0)
+  status        String   @default("ok")
+  errorMessage  String?
+}
+
+model Alert {
+  id          String   @id @default(cuid())
+  type        String   // late_clockin, long_break, claim_rejected, no_show
+  severity    String   @default("warning") // info, warning, critical
+  title       String
+  message     String
+  employeeId  Int?
+  dismissed   Boolean  @default(false)
+  autoResolved Boolean @default(false)
+  createdAt   DateTime @default(now())
+
+  employee    Employee? @relation(fields: [employeeId], references: [id])
+
+  @@index([dismissed, createdAt])
+  @@index([type, createdAt])
+}
+
+model Goal {
+  id          String   @id @default(cuid())
+  type        String   // production, claims, appointments
+  period      String   // daily, weekly
+  target      Float
+  employeeId  Int?     // null = office-wide
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employee    Employee? @relation(fields: [employeeId], references: [id])
+}
+
+model EmailSetting {
+  id                    String  @id @default("default")
+  smtpHost              String  @default("")
+  smtpPort              Int     @default(587)
+  smtpUser              String  @default("")
+  smtpPassword          String  @default("") // encrypted via crypto.ts
+  smtpFrom              String  @default("")
+  reportRecipients      String  @default("") // comma-separated
+  dailyReportEnabled    Boolean @default(false)
+  dailyReportTime       String  @default("18:00")
+  alertEmailEnabled     Boolean @default(false)
+  lastDailyReportSentAt DateTime?
+}
+
+model Schedule {
+  id          Int      @id
+  employeeNum Int?
+  provNum     Int?
+  schedDate   DateTime
+  startTime   String   // "HH:MM" format (OD stores as TimeSpan)
+  stopTime    String   // "HH:MM" format
+  schedType   Int      // 0=Practice, 1=Provider, 2=Employee
+  note        String?
+  syncedAt    DateTime @default(now())
+
+  @@index([schedDate])
+  @@index([employeeNum, schedDate])
+}
+
+model InsVerification {
+  id                Int       @id // InsVerifyNum from OD
+  patNum            Int
+  insSubNum         Int?
+  appointmentNum    Int?
+  verifyType        String    // InsuranceBenefit, PatientEnrollment
+  dateLastVerified  DateTime?
+  dateTimeEntry     DateTime?
+  defNum            Int?      // status definition
+  note              String?
+  assignedTo        Int?      // UserNum
+  syncedAt          DateTime  @default(now())
+
+  @@index([dateLastVerified])
+  @@index([assignedTo])
+}
+
