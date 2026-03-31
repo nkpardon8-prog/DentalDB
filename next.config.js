@@ -3,6 +3,9 @@ const nextConfig = {
   experimental: {
     instrumentationHook: true,
     serverComponentsExternalPackages: ["pdfkit"],
+    outputFileTracingIncludes: {
+      "/**": ["./prisma/dev.db"],
+    },
   },
   webpack: (config, { isServer }) => {
     if (isServer) {

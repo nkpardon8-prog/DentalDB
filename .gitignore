@@ -4,3 +4,9 @@ node_modules/
 *.db-journal
 .env.local
 .env
+.DS_Store
+deno.lock
+tmp/
+
+# Local Netlify folder
+.netlify
