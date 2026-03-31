@@ -1,6 +1,7 @@
 "use client"
 
 import { signIn } from "next-auth/react"
+import Image from "next/image"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState, Suspense } from "react"
 
@@ -47,14 +48,7 @@ function LoginForm() {
         <div className="relative z-10">
           {/* Wordmark */}
           <div className="flex items-center gap-3 mb-2">
-            <svg className="h-10 w-10" viewBox="0 0 32 36" fill="none">
-              <path d="M6 10L9 4L16 8L23 4L26 10H6Z" fill="#fbbf24"/>
-              <rect x="6" y="9" width="20" height="3" rx="0.5" fill="#f59e0b"/>
-              <circle cx="11" cy="6.5" r="1" fill="#ef4444"/>
-              <circle cx="16" cy="4.5" r="1" fill="white" fillOpacity="0.8"/>
-              <circle cx="21" cy="6.5" r="1" fill="#10b981"/>
-              <path d="M16 11C13 11 11 13 10.5 15C10 13 8 11 5 11C5 15.5 7 18.5 10 20V28C10 29.1 10.9 30 12 30H20C21.1 30 22 29.1 22 28V20C25 18.5 27 15.5 27 11C24 11 22 13 21.5 15C21 13 19 11 16 11Z" fill="white" fillOpacity="0.9"/>
-            </svg>
+            <Image src="/logo.png" alt="DentalAdmin logo" width={40} height={40} className="rounded-lg" />
             <span className="text-2xl font-semibold text-white tracking-tight">DentalAdmin</span>
           </div>
         </div>
@@ -86,14 +80,7 @@ function LoginForm() {
           {/* Mobile-only branding */}
           <div className="lg:hidden text-center mb-10">
             <div className="inline-flex items-center gap-2.5 mb-3">
-              <svg className="h-9 w-9" viewBox="0 0 32 36" fill="none">
-                <path d="M6 10L9 4L16 8L23 4L26 10H6Z" fill="#fbbf24"/>
-                <rect x="6" y="9" width="20" height="3" rx="0.5" fill="#f59e0b"/>
-                <circle cx="11" cy="6.5" r="1" fill="#ef4444"/>
-                <circle cx="16" cy="4.5" r="1" fill="#6366f1"/>
-                <circle cx="21" cy="6.5" r="1" fill="#10b981"/>
-                <path d="M16 11C13 11 11 13 10.5 15C10 13 8 11 5 11C5 15.5 7 18.5 10 20V28C10 29.1 10.9 30 12 30H20C21.1 30 22 29.1 22 28V20C25 18.5 27 15.5 27 11C24 11 22 13 21.5 15C21 13 19 11 16 11Z" fill="#6366f1"/>
-              </svg>
+              <Image src="/logo.png" alt="DentalAdmin logo" width={36} height={36} className="rounded-lg" />
               <span className="text-xl font-semibold text-slate-800 tracking-tight">DentalAdmin</span>
             </div>
           </div>
